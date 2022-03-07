@@ -69,6 +69,12 @@ app.get('/api/animals/:id', (req, res) => {
   }
 });
 
+app.post('/api/animals', (req, res) => {
+  // req.body is where our incoming content will be
+  console.log(req.body);
+  res.json(req.body);
+});
+
 // Now we just need to use one method to make our server listen. We're going to chain the listen() method onto our server to do it. To do that, add the following code to the end.
 app.listen(PORT, () => {
   console.log(`API server now on port ${PORT}!`);
