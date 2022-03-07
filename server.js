@@ -1,12 +1,13 @@
 const express = require('express');
 
-// Applications served over Heroku as well as most hosts must run on port 80. If the host uses HTTPS, then the port would be set to 443.
-const PORT = process.env.PORT || 3001;
-// To instantiate the server.
-const app = express();
-
 // Creating a route that the front-end can request data from.
 const { animals } = require('./data/animals');
+
+// Applications served over Heroku as well as most hosts must run on port 80. If the host uses HTTPS, then the port would be set to 443.
+const PORT = process.env.PORT || 3001;
+
+// To instantiate the server.
+const app = express();
 
 function filterByQuery(query, animalsArray) {
   let personalityTraitsArray = [];
@@ -46,12 +47,26 @@ function filterByQuery(query, animalsArray) {
   return filteredResults;
 };
 
+function findById(id, animalsArray) {
+  const result = animalsArray.filter(animal => animal.id === id)[0];
+  return result;
+};
+
 app.get('/api/animals', (req, res) => {
   let results = animals;
   if (req.query) {
     results = filterByQuery(req.query, results);
   }
   res.json(results);
+});
+
+app.get('/api/animals/:id', (req, res) => {
+  const result = findById(req.params.id, animals);
+  if (result) {
+    res.json(result);
+  } else {
+    res.send(404);
+  }
 });
 
 // Now we just need to use one method to make our server listen. We're going to chain the listen() method onto our server to do it. To do that, add the following code to the end.
