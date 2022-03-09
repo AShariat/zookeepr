@@ -1,0 +1,27 @@
+{
+  "name": "zookeepr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AShariat/zookeepr.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AShariat/zookeepr/issues"
+  },
+  "homepage": "https://github.com/AShariat/zookeepr#readme",
+  "dependencies": {
+    "D": "^1.0.0",
+    "express": "^4.17.3",
+    "jest": "^27.5.1",
+    "test": "^0.6.0"
+  }
+}
