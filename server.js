@@ -1,6 +1,9 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+// The require() statements will read the index.js files in each of the directories indicated. This mechanism works the same way as directory navigation does in a website: If we navigate to a directory that doesn't have an index.html file, then the contents are displayed in a directory listing. But if there's an index.html file, then it is read and its HTML is displayed instead. Similarly, with require(), the index.js file will be the default file read if no other file is provided, which is the coding method we're using here.
+const apiRoutes = require('./routes/apiRoutes');
+const htmlRoutes = require('./routes/htmlRoutes');
 
 // Creating a route that the front-end can request data from.
 const { animals } = require('./data/animals');
@@ -19,125 +22,9 @@ app.use(express.json());
 // We add some more middleware to our server and used the express.static() method. The way it works is that we provide a file path to a location in our application (in this case, the public folder) and instruct the server to make these files static resources. This means that all of our front-end code can now be accessed without having a specific server endpoint created for it!
 app.use(express.static('public'));
 
-function filterByQuery(query, animalsArray) {
-  let personalityTraitsArray = [];
-  // Note that we save the animalsArray as filteredResults here:
-  let filteredResults = animalsArray;
-  if (query.personalityTraits) {
-    // Save personalityTraits as a dedicated array.
-    // If personalityTraits is a string, place it into a new array and save.
-    if (typeof query.personalityTraits === 'string') {
-      personalityTraitsArray = [query.personalityTraits];
-    } else {
-      personalityTraitsArray = query.personalityTraits;
-    }
-    // Loop through each trait in the personalityTraits array:
-    personalityTraitsArray.forEach(trait => {
-      // Check the trait against each animal in the filteredResults array.
-      // Remember, it is initially a copy of the animalsArray,
-      // but here we're updating it for each trait in the .forEach() loop.
-      // For each trait being targeted by the filter, the filteredResults
-      // array will then contain only the entries that contain the trait,
-      // so at the end we'll have an array of animals that have every one 
-      // of the traits when the .forEach() loop is finished.
-      filteredResults = filteredResults.filter(
-        animal => animal.personalityTraits.indexOf(trait) !== -1
-      );
-    });
-  }
-  if (query.diet) {
-    filteredResults = filteredResults.filter(animal => animal.diet === query.diet);
-  }
-  if (query.species) {
-    filteredResults = filteredResults.filter(animal => animal.species === query.species);
-  }
-  if (query.name) {
-    filteredResults = filteredResults.filter(animal => animal.name === query.name);
-  }
-  return filteredResults;
-};
-
-function findById(id, animalsArray) {
-  const result = animalsArray.filter(animal => animal.id === id)[0];
-  return result;
-};
-
-function createNewAnimal(body, animalsArray) {
-  const animal = body;
-  animalsArray.push(animal);
-  // Here, we're using the fs.writeFileSync() method, which is the synchronous version of fs.writeFile() and doesn't require a callback function. If we were writing to a much larger data set, the asynchronous version would be better. But because this isn't a large file, it will work for our needs.
-  fs.writeFileSync(
-    // We want to write to our animals.json file in the data subdirectory, so we use the method path.join() to join the value of __dirname, which represents the directory of the file we execute the code in, with the path to the animals.json file.
-    path.join(__dirname, './data/animals.json'),
-    // We need to save the JavaScript array data as JSON, so we use JSON.stringify() to convert it. The other two arguments used in the method, null and 2, are means of keeping our data formatted. The null argument means we don't want to edit any of our existing data; if we did, we could pass something in there. The 2 indicates we want to create white space between our values to make it more readable. If we were to leave those two arguments out, the entire animals.json file would work, but it would be really hard to read.
-    JSON.stringify({ animals: animalsArray }, null, 2)
-  );
-  return animal;
-};
-
-function validateAnimal(animal) {
-  if (!animal.name || typeof animal.name !== 'string') {
-    return false;
-  }
-  if (!animal.species || typeof animal.species !== 'string') {
-    return false;
-  }
-  if (!animal.diet || typeof animal.diet !== 'string') {
-    return false;
-  }
-  if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
-    return false;
-  }
-  return true;
-};
-
-app.get('/api/animals', (req, res) => {
-  let results = animals;
-  if (req.query) {
-    results = filterByQuery(req.query, results);
-  }
-  res.json(results);
-});
-
-app.get('/api/animals/:id', (req, res) => {
-  const result = findById(req.params.id, animals);
-  if (result) {
-    res.json(result);
-  } else {
-    res.send(404);
-  }
-});
-
-app.post('/api/animals', (req, res) => {
-  // set id based on what the next index of the array will be
-  req.body.id = animals.length.toString();
-  // if any data in req.body is incorrect, send 400 error back
-  if (!validateAnimal(req.body)) {
-    res.status(400).send('The animal is not properly formatted.');
-  } else {
-  // add animal to json file and animals array in this function
-  const animal = createNewAnimal(req.body, animals);
-  res.json(animal);
-  }
-});
-
-app.get('/', (req, res) => {
-  // Notice in the res.sendFile() that we're using the path module again to ensure that we're finding the correct location for the HTML code we want to display in the browser. This way, we know it will work in any server environment!
-  res.sendFile(path.join(__dirname, './public/index.html'));
-});
-
-app.get('/animals', (req, res) => {
-  res.sendFile(path.join(__dirname, './public/animals.html'));
-});
-
-app.get('/zookeepers', (req, res) => {
-  res.sendFile(path.join(__dirname, './public/zookeepers.html'));
-});
-
-// The * will act as a wildcard, meaning any route that wasn't previously defined will fall under this request and will receive the homepage as the response. The * route should always come last. Otherwise, it will take precedence over named routes, and you won't see what you expect to see on routes like /zookeeper.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, './public/index.html'));
-});
+// This is our way of telling the server that any time a client navigates to <ourhost>/api, the app will use the router we set up in apiRoutes. If / is the endpoint, then the router will serve back our HTML routes.
+app.use('/api', apiRoutes);
+app.use('/', htmlRoutes);
 
 // Now we just need to use one method to make our server listen. We're going to chain the listen() method onto our server to do it. To do that, add the following code to the end.
 app.listen(PORT, () => {
